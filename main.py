@@ -5,7 +5,6 @@ import cv2
 import math
 from time import time
 
-
 class DistanceEstimationDetector:
     def __init__(self, video_path, model_path):
         """
@@ -34,7 +33,7 @@ class DistanceEstimationDetector:
         model.conf = 0.40  # confidence 임계값
         model.iou = 0.45  # NMS IoU threshold
         model.max_det = 1000  # 최대 감지 수(한 프레임당)
-        model.classes = [0]  # 객체의 class number
+        model.classes = [0, 2]  # 객체의 class number
         return model
 
     def get_model_results(self, frame):
@@ -48,9 +47,7 @@ class DistanceEstimationDetector:
         results = self.model(frame,size=640)
         predictions = results.xyxyn[0]
         cords, scores, labels = predictions[:, :4], predictions[:, 4], predictions[:,5]
-
         return cords, scores, labels
-
 
     def draw_rect(self, results, frame):
         """
@@ -95,7 +92,7 @@ class DistanceEstimationDetector:
         start_point = (start_x, start_y)
 
         heigth_in_rf = 121
-        measured_distance = 275  # inch =700cm
+        measured_distance = 275  # inch = 700cm
         real_heigth = 60  # inch = 150 cm
         focal_length = (heigth_in_rf * measured_distance) / real_heigth
 
@@ -128,6 +125,7 @@ class DistanceEstimationDetector:
         assert cap.isOpened()
         while True:
             ret, frame = cap.read()
+            cap_h, cap_w, _ = frame.shape
             assert ret
             start_time = time()
             results = self.get_model_results(frame)
@@ -137,7 +135,8 @@ class DistanceEstimationDetector:
 
             end_time = time()
             fps = 1 / np.round(end_time - start_time, 2)  # FPS 계산
-            # print(f"FPS : {fps}")
+            #print(f"FPS : {fps}")
+            print(f'{cap_w}x{cap_h}, Inference :', (fps/1000) * 100)
 
             cv2.putText(frame, f'FPS: {int(fps)}', (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.imshow('YOLOv5 Distance Estimation', frame)
@@ -147,7 +146,6 @@ class DistanceEstimationDetector:
 
         cv2.destroyAllWindows()
 
-
 # DistanceEstimationDetector 객체 생성
-detector = DistanceEstimationDetector(video_path='input/1506.mp4', model_path='yolov5s.pt')
+detector = DistanceEstimationDetector(video_path='input/car_input1.mp4', model_path='yolov5s.pt')
 detector()
