@@ -136,7 +136,7 @@ class DistanceEstimationDetector:
             end_time = time()
             fps = 1 / np.round(end_time - start_time, 2)  # FPS 계산
             #print(f"FPS : {fps}")
-            print(f'{cap_w}x{cap_h}, Inference :', (fps/1000) * 100)
+            print('{0}x{1}, Inference : {2}ms'.format(cap_w, cap_h, round(fps/1000 * 100, 3)))
 
             cv2.putText(frame, f'FPS: {int(fps)}', (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.imshow('YOLOv5 Distance Estimation', frame)
