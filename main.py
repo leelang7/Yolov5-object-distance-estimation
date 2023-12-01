@@ -65,9 +65,17 @@ class DistanceEstimationDetector:
             x1, y1, x2, y2 = int(row[0] * x_shape), int(row[1] * y_shape), int(row[2] * x_shape), int(row[3] * y_shape)
             green_bgr = (0, 255, 0)
             cv2.rectangle(frame, (x1, y1), (x2, y2), green_bgr, 1) # 바운딩 박스 그리기
+            cls = labels[i] # 클래스 네임 얻기
+            cls = int(cls)
+            global cls_name
+            if cls == 2:
+                cls_name = 'car'
+            if cls == 0:
+                cls_name = 'person'
+            cv2.putText(frame, cls_name, (x1+35, y1), cv2.FONT_HERSHEY_COMPLEX, 0.8, (255,0,0), 1)
 
         return frame
-
+    
     def calc_distances(self, results, frame):
         """
         거리 계산
@@ -97,6 +105,7 @@ class DistanceEstimationDetector:
         focal_length = (heigth_in_rf * measured_distance) / real_heigth
 
         pixel_per_cm = float(2200 / x_shape) * 2.54
+
         for i in range(0, len(points)):
             end_x1, end_y1, end_x2, end_y2, end_x_mid_rect, end_y_mid_rect, end_x_line_length, end_y_line_length = points[i]
             if end_x2 < x_shape_mid: # 왼쪽에 있는 경우
@@ -108,7 +117,7 @@ class DistanceEstimationDetector:
 
             dif_x, dif_y = abs(start_point[0] - end_point[0]), abs(start_point[1] - end_point[1])
             pixel_count = math.sqrt(math.pow(dif_x, 2) + math.pow(dif_y, 2))
-
+            global distance
             distance = float(pixel_count * pixel_per_cm  / end_y_line_length)
 
             # distance = real_heigth * focal_length / abs(end_y1 - end_y2);
@@ -117,9 +126,9 @@ class DistanceEstimationDetector:
             #cv2.line(frame, start_point, end_point, color=(0, 0, 255), thickness=1)
             cv2.putText(frame, str(round(distance, 2)) +" m", (int(end_x1), int(end_y2)), cv2.FONT_HERSHEY_DUPLEX,
                         0.5, (255, 255, 255), 2)
-            cv2.putText(frame, str(int(scores[i] * 100)) + "% Car", (int(end_x1), int(end_y1)), cv2.FONT_HERSHEY_DUPLEX,0.5, (255, 255, 0), 2)
+            cv2.putText(frame, str(int(scores[i] * 100)) + "%", (int(end_x1), int(end_y1)), cv2.FONT_HERSHEY_DUPLEX,0.5, (255, 255, 0), 2)
         return frame
-
+    
     def __call__(self):
         cap = self.get_video_capture()
         assert cap.isOpened()
@@ -136,7 +145,7 @@ class DistanceEstimationDetector:
             end_time = time()
             fps = 1 / np.round(end_time - start_time, 2)  # FPS 계산
             #print(f"FPS : {fps}")
-            print('{0}x{1}, Inference : {2}ms'.format(cap_w, cap_h, round(fps/1000 * 100, 3)))
+            print('{0}x{1}, {2}, Inference : {3}ms, Distance : {4}m'.format(cap_w, cap_h, cls_name, round(fps/1000 * 100, 3), round(distance, 2)))
 
             cv2.putText(frame, f'FPS: {int(fps)}', (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 255, 0), 2)
             cv2.imshow('YOLOv5 Distance Estimation', frame)
